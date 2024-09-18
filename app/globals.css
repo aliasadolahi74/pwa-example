@@ -25,3 +25,8 @@ body {
     text-wrap: balance;
   }
 }
+
+
+.leaflet-bottom.leaflet-right {
+  display: none !important;
+}
