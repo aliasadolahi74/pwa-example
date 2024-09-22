@@ -12,15 +12,15 @@ const MapContext = () => {
 
     const map = useMap()
     const response = useGeoLocation();
-    map.locate({watch: true, setView: true, enableHighAccuracy: true, maxZoom: 23});
-    console.log("response", response);
+    map.locate({enableHighAccuracy: true, maxZoom: 23});
 
     useEffect(() => {
         const latlng = new LatLng(response.latitude, response.longitude);
-        if(marker) {
+        map.setView(latlng)
+        if (marker) {
             marker.setLatLng(latlng)
         } else {
-            if(response.latitude && response.longitude) {
+            if (response.latitude && response.longitude) {
                 marker = new L.Marker(latlng, {
                     icon: L.icon({
                         iconSize: [20, 20],
@@ -32,9 +32,6 @@ const MapContext = () => {
         }
 
     }, [response.latitude, response.longitude]);
-
-
-
 
 
     return <></>;

@@ -15,7 +15,7 @@ const haversineDistance = (coords1: Coordinates, coords2: Coordinates): number =
         Math.sin(deltaLon / 2) * Math.sin(deltaLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-    return Number((R * c).toFixed(2)); // Distance in meters
+    return Number((R * c).toFixed(5)); // Distance in meters
 };
 
 export default haversineDistance;

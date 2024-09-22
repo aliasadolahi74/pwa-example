@@ -52,7 +52,7 @@ export default function Home() {
                     setDistanceToLast(distanceToLastPoint);
                     setDistanceToStart(distanceToStartingPoint);
                     if (distanceToStartingPoint < 1 && points.length > 2) {
-                        setStarted(false);
+                        toast("Do you want to finish it?", {type: "info", theme: "colored"});
                     }
                     if (distanceToLastPoint >= 3) {
                         setData(() => {
