@@ -2,9 +2,10 @@
 import dynamic from "next/dynamic";
 
 const Map = dynamic(() => import("@/src/core/Map"), {ssr: false});
+// @ts-ignore
+const L = dynamic(() => import("@/src/core/Map/L"), {ssr: false}) as {LatLng: LatLng};
 import useGeoLocation from "@/src/core/Map/utils/useGeoLocation";
 import {useEffect, useRef, useState} from "react";
-import {LatLng} from "leaflet";
 
 export default function Home() {
     const response = useGeoLocation();
@@ -26,9 +27,9 @@ export default function Home() {
                 if (points.length > 0) {
                     const startingPoint = points[0];
                     const lastPoint = points[points.length - 1];
-                    const startingPointLatLng = new LatLng(startingPoint.latitude, startingPoint.longitude);
-                    const lastPointLatLng = new LatLng(lastPoint.latitude, lastPoint.longitude);
-                    const currentPointLatLng = new LatLng(currentPoint.latitude, currentPoint.longitude);
+                    const startingPointLatLng = new L.LatLng(startingPoint.latitude, startingPoint.longitude);
+                    const lastPointLatLng = new L.LatLng(lastPoint.latitude, lastPoint.longitude);
+                    const currentPointLatLng = new L.LatLng(currentPoint.latitude, currentPoint.longitude);
                     const distanceToStartingPoint = startingPointLatLng.distanceTo(currentPointLatLng);
                     const distanceToLastPoint = lastPointLatLng.distanceTo(currentPointLatLng);
                     if (distanceToStartingPoint < 3 && points.length > 2) {
