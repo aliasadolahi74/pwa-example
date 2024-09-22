@@ -12,6 +12,8 @@ export default function Home() {
     const [started, setStarted] = useState(false);
     const [points, setPoints] = useState<{ latitude: number; longitude: number; altitude: number | null; }[]>([]);
     const interval = useRef<NodeJS.Timeout>();
+    const [distanceToStart, setDistanceToStart] = useState<number>(0);
+    const [distanceToLast, setDistanceToLast] = useState<number>(0);
 
     const handleClickStart = () => {
         if(response.accuracy && response.accuracy < 20) {
@@ -36,16 +38,26 @@ export default function Home() {
                     const lastPoint = points[points.length - 1];
                     const distanceToStartingPoint = measureDistance(startingPoint, currentPoint);
                     const distanceToLastPoint = measureDistance(lastPoint, currentPoint);
-                    if (distanceToStartingPoint < 3 && points.length > 2) {
+                    setDistanceToLast(distanceToLastPoint);
+                    setDistanceToStart(distanceToStartingPoint);
+                    if (distanceToStartingPoint < 1 && points.length > 2) {
                         setStarted(false);
                     }
                     if (distanceToLastPoint >= 3) {
+                        if(response.accuracy && response.accuracy < 20) {
+                            toast("Low Accuracy");
+                        } else {
+                            draft.push(currentPoint);
+                            setPoints(draft)
+                        }
+                    }
+                } else {
+                    if(response.accuracy && response.accuracy < 20) {
+                        toast("Low Accuracy");
+                    } else {
                         draft.push(currentPoint);
                         setPoints(draft)
                     }
-                } else {
-                    draft.push(currentPoint);
-                    setPoints(draft)
                 }
 
             }
@@ -68,6 +80,8 @@ export default function Home() {
                             <div><span>longitude:</span> <span>{response.longitude}</span></div>
                             <div><span>altitude:</span> <span>{response.altitude}</span></div>
                             <div><span>accuracy:</span> <span>{response.accuracy}</span></div>
+                            <div><span>distance to start:</span> <span>{distanceToStart}</span></div>
+                            <div><span>distance to last:</span> <span>{distanceToLast}</span></div>
                         </div>
                     </div>
 
