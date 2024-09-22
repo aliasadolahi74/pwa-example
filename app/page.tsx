@@ -3,9 +3,11 @@ import dynamic from "next/dynamic";
 
 import useGeoLocation from "@/src/core/Map/utils/useGeoLocation";
 import {useEffect, useRef, useState} from "react";
+
 const Map = dynamic(() => import("@/src/core/Map"), {ssr: false});
 import measureDistance from "@/src/core/Map/utils/measureDistance";
 import {toast} from "react-toastify";
+import PolygonSvg from "@/src/features/PolygonSvg";
 
 export default function Home() {
     const response = useGeoLocation();
@@ -17,8 +19,8 @@ export default function Home() {
 
 
     const setData = (callback?: () => void) => {
-        if(response.accuracy) {
-            if(response.accuracy < 20) {
+        if (response.accuracy) {
+            if (response.accuracy < 20) {
                 callback ? callback() : undefined;
             } else {
                 toast("Low Accuracy", {type: "error", theme: "colored"});
@@ -76,6 +78,14 @@ export default function Home() {
     }, [started, points, response]);
 
 
+    const handleEndBtnClick = () => {
+        setStarted(false);
+        const draft = [...points];
+        draft.push({latitude: points[0].latitude, longitude: points[0].longitude, altitude: points[0].altitude});
+        clearInterval(interval.current);
+    }
+
+
     return (
         <div className="flex flex-col min-h-screen w-full">
             <div className="p-4 flex flex-grow w-full">
@@ -95,7 +105,7 @@ export default function Home() {
                     <hr/>
 
 
-                    {started ? <button onClick={() => setStarted(false)}
+                    {started ? <button onClick={handleEndBtnClick}
                                        className="bg-red-500 text-white px-4 rounded-lg py-2">Stop</button> :
                         <button onClick={handleClickStart}
                                 className="bg-teal-500 text-white px-4 rounded-lg py-2">Start</button>}
@@ -118,6 +128,8 @@ export default function Home() {
                             ))}
                             </tbody>
                         </table>
+
+                        {!started && points.length > 0 ? <PolygonSvg polygon={points.map(item => [item.latitude, item.longitude])} /> : <span>Polygon not completed</span>}
                     </div>
                 </div>
             </div>
