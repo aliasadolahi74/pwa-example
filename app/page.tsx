@@ -15,13 +15,24 @@ export default function Home() {
     const [distanceToStart, setDistanceToStart] = useState<number>(0);
     const [distanceToLast, setDistanceToLast] = useState<number>(0);
 
-    const handleClickStart = () => {
-        if(response.accuracy && response.accuracy < 20) {
-            toast("Low Accuracy");
+
+    const setData = (callback?: () => void) => {
+        if(response.accuracy) {
+            if(response.accuracy < 20) {
+                callback ? callback() : undefined;
+            } else {
+                toast("Low Accuracy", {type: "error", theme: "colored"});
+            }
         } else {
-            setPoints([{latitude: response.latitude, longitude: response.longitude, altitude: response.altitude}]);
-            setStarted(true);
+            toast("No Accuracy attribute found", {type: "error", theme: "colored"});
         }
+    }
+
+    const handleClickStart = () => {
+        setData(() => {
+            setPoints([{latitude: response.latitude, longitude: response.longitude, altitude: response.altitude}]);
+            setStarted(true)
+        })
     }
 
     useEffect(() => {
@@ -44,20 +55,16 @@ export default function Home() {
                         setStarted(false);
                     }
                     if (distanceToLastPoint >= 3) {
-                        if(response.accuracy && response.accuracy < 20) {
-                            toast("Low Accuracy");
-                        } else {
+                        setData(() => {
                             draft.push(currentPoint);
                             setPoints(draft)
-                        }
+                        })
                     }
                 } else {
-                    if(response.accuracy && response.accuracy < 20) {
-                        toast("Low Accuracy");
-                    } else {
+                    setData(() => {
                         draft.push(currentPoint);
                         setPoints(draft)
-                    }
+                    })
                 }
 
             }
