@@ -7,7 +7,7 @@ import MapContext from "@/src/core/Map/MapContext";
 const Map = () => {
 
     return (
-        <MapContainer minZoom={5}  style={{position: "absolute", inset: 0}} center={[32.4279, 53.6880]} zoom={5}>
+        <MapContainer  minZoom={1}  style={{position: "absolute", inset: 0}} center={[32.4279, 53.6880]} zoom={5}>
             <MapContext />
             <TileLayer
                 subdomains={["mt0", "mt1", "mt2", "mt3"]}
