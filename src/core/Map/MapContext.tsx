@@ -12,7 +12,7 @@ const MapContext = () => {
 
     const map = useMap()
     const response = useGeoLocation();
-    map.locate({watch: true, setView: true});
+    map.locate({watch: true, setView: true, enableHighAccuracy: true, maxZoom: 23});
     console.log("response", response);
 
     useEffect(() => {

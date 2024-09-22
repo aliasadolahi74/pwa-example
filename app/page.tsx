@@ -1,11 +1,11 @@
 "use client";
 import dynamic from "next/dynamic";
 
-const Map = dynamic(() => import("@/src/core/Map"), {ssr: false});
-// @ts-ignore
-const L = dynamic(() => import("@/src/core/Map/L"), {ssr: false}) as {LatLng: LatLng};
 import useGeoLocation from "@/src/core/Map/utils/useGeoLocation";
 import {useEffect, useRef, useState} from "react";
+const Map = dynamic(() => import("@/src/core/Map"), {ssr: false});
+import measureDistance from "@/src/core/Map/utils/measureDistance";
+import {toast} from "react-toastify";
 
 export default function Home() {
     const response = useGeoLocation();
@@ -13,9 +13,17 @@ export default function Home() {
     const [points, setPoints] = useState<{ latitude: number; longitude: number; altitude: number | null; }[]>([]);
     const interval = useRef<NodeJS.Timeout>();
 
+    const handleClickStart = () => {
+        if(response.accuracy && response.accuracy < 20) {
+            toast("Low Accuracy");
+        } else {
+            setPoints([{latitude: response.latitude, longitude: response.longitude, altitude: response.altitude}]);
+            setStarted(true);
+        }
+    }
+
     useEffect(() => {
         interval.current = setInterval(() => {
-            console.log("started")
             if (started) {
                 const draft = [...points];
                 const currentPoint = {
@@ -23,15 +31,11 @@ export default function Home() {
                     longitude: response.longitude,
                     altitude: response.altitude || null
                 };
-                console.log("points.length", points.length)
                 if (points.length > 0) {
                     const startingPoint = points[0];
                     const lastPoint = points[points.length - 1];
-                    const startingPointLatLng = new L.LatLng(startingPoint.latitude, startingPoint.longitude);
-                    const lastPointLatLng = new L.LatLng(lastPoint.latitude, lastPoint.longitude);
-                    const currentPointLatLng = new L.LatLng(currentPoint.latitude, currentPoint.longitude);
-                    const distanceToStartingPoint = startingPointLatLng.distanceTo(currentPointLatLng);
-                    const distanceToLastPoint = lastPointLatLng.distanceTo(currentPointLatLng);
+                    const distanceToStartingPoint = measureDistance(startingPoint, currentPoint);
+                    const distanceToLastPoint = measureDistance(lastPoint, currentPoint);
                     if (distanceToStartingPoint < 3 && points.length > 2) {
                         setStarted(false);
                     }
@@ -72,7 +76,7 @@ export default function Home() {
 
                     {started ? <button onClick={() => setStarted(false)}
                                        className="bg-red-500 text-white px-4 rounded-lg py-2">Stop</button> :
-                        <button onClick={() => setStarted(true)}
+                        <button onClick={handleClickStart}
                                 className="bg-teal-500 text-white px-4 rounded-lg py-2">Start</button>}
 
 

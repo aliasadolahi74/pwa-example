@@ -2,6 +2,7 @@ import type {Metadata} from "next";
 import {Vazirmatn} from "next/font/google";
 import "./globals.css";
 import PWAProvider from "@/app/PWAProvider";
+import {ToastContainer} from "react-toastify";
 
 const vazirmatn = Vazirmatn({subsets: ["arabic"]})
 
@@ -21,6 +22,7 @@ export default function RootLayout({
             className={`${vazirmatn.className} antialiased`}
         >
         <PWAProvider>
+            <ToastContainer />
             {children}
         </PWAProvider>
         </body>
