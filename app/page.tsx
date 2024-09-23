@@ -117,8 +117,8 @@ export default function Home() {
                         setData(async () => {
                             draft.push(currentPoint);
                             const epsilon = calculateDynamicEpsilon(draft);
-                            const result = await simplifyPolygon(draft, epsilon);
-                            setPoints(result)
+                            // const result = await simplifyPolygon(draft, epsilon);
+                            setPoints(draft)
                         })
                     }
                 } else {
@@ -142,9 +142,9 @@ export default function Home() {
         setStarted(false);
         const draft = [...points];
         draft.push({latitude: points[0].latitude, longitude: points[0].longitude});
-        const epsilon = calculateDynamicEpsilon(draft)
-        const result = await simplifyPolygon(draft, epsilon);
-        setPoints(result)
+        // const epsilon = calculateDynamicEpsilon(draft)
+        // const result = await simplifyPolygon(draft, epsilon);
+        setPoints(draft)
         clearInterval(interval.current);
     }
 
