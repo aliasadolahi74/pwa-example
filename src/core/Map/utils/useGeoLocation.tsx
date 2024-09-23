@@ -25,7 +25,7 @@ const UseGeoLocation = () => {
                         }
                         console.log(e);
                     },
-                    {timeout: 2000, enableHighAccuracy: true}
+                    {timeout: 500, enableHighAccuracy: true}
                 );
             });
         } else {

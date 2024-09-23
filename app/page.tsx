@@ -9,13 +9,76 @@ import measureDistance from "@/src/core/Map/utils/measureDistance";
 import {toast} from "react-toastify";
 import PolygonSvg from "@/src/features/PolygonSvg";
 
+type ISinglePoint = { latitude: number; longitude: number }
+type IPoints = ISinglePoint[];
+
 export default function Home() {
     const response = useGeoLocation();
     const [started, setStarted] = useState(false);
-    const [points, setPoints] = useState<{ latitude: number; longitude: number; altitude: number | null; }[]>([]);
+    const [points, setPoints] = useState<IPoints>([]);
     const interval = useRef<NodeJS.Timeout>();
     const [distanceToStart, setDistanceToStart] = useState<number>(0);
     const [distanceToLast, setDistanceToLast] = useState<number>(0);
+
+
+    const perpendicularDistance = (point: ISinglePoint, lineStart: ISinglePoint, lineEnd: ISinglePoint): number => {
+        const dx = lineEnd.longitude - lineStart.longitude;
+        const dy = lineEnd.latitude - lineStart.latitude;
+
+        const mag = Math.sqrt(dx * dx + dy * dy);
+        if (mag > 0) {
+            return Math.abs((dy * point.longitude - dx * point.latitude + lineEnd.longitude * lineStart.latitude - lineEnd.latitude * lineStart.longitude) / mag);
+        }
+        return 0;
+    }
+
+    const calculateDynamicEpsilon = (points: IPoints, targetAccuracyMeters: number = 10): number => {
+        // Find the average latitude of all points
+        const avgLatitude = points.reduce((sum, point) => sum + point.latitude, 0) / points.length;
+
+        // Calculate the length of one degree of latitude and longitude at this latitude
+        const latDegreeLength = 111132.92 - 559.82 * Math.cos(2 * avgLatitude * Math.PI / 180) + 1.175 * Math.cos(4 * avgLatitude * Math.PI / 180);
+        const lonDegreeLength = 111412.84 * Math.cos(avgLatitude * Math.PI / 180) - 93.5 * Math.cos(3 * avgLatitude * Math.PI / 180);
+
+        // Calculate epsilon for both latitude and longitude
+        const latEpsilon = targetAccuracyMeters / latDegreeLength;
+        const lonEpsilon = targetAccuracyMeters / lonDegreeLength;
+
+        // Use the smaller of the two to ensure we meet the accuracy requirement for both dimensions
+        return Math.min(latEpsilon, lonEpsilon);
+    }
+
+
+    const simplifyPolygon = (points: IPoints, epsilon: number): IPoints => {
+        if (points.length <= 2) {
+            return points;
+        }
+
+        // Find the point with the maximum distance
+        let maxDistance = 0;
+        let index = 0;
+        const firstPoint = points[0];
+        const lastPoint = points[points.length - 1];
+
+        for (let i = 1; i < points.length - 1; i++) {
+            const distance = perpendicularDistance(points[i], firstPoint, lastPoint);
+            if (distance > maxDistance) {
+                maxDistance = distance;
+                index = i;
+            }
+        }
+
+        // If max distance is greater than epsilon, recursively simplify
+        if (maxDistance > epsilon) {
+            const results1 = simplifyPolygon(points.slice(0, index + 1), epsilon);
+            const results2 = simplifyPolygon(points.slice(index), epsilon);
+
+            // Concat the two result sets
+            return [...results1.slice(0, -1), ...results2];
+        } else {
+            return [firstPoint, lastPoint];
+        }
+    }
 
 
     const setData = (callback?: () => void) => {
@@ -32,7 +95,7 @@ export default function Home() {
 
     const handleClickStart = () => {
         setData(() => {
-            setPoints([{latitude: response.latitude, longitude: response.longitude, altitude: response.altitude}]);
+            setPoints([{latitude: response.latitude, longitude: response.longitude}]);
             setStarted(true)
         })
     }
@@ -40,7 +103,7 @@ export default function Home() {
     useEffect(() => {
         interval.current = setInterval(() => {
             if (started) {
-                const draft = [...points];
+                const draft: IPoints = [...points];
                 const currentPoint = {
                     latitude: response.latitude,
                     longitude: response.longitude,
@@ -59,7 +122,8 @@ export default function Home() {
                     if (distanceToLastPoint >= 3) {
                         setData(() => {
                             draft.push(currentPoint);
-                            setPoints(draft)
+                            const epsilon = calculateDynamicEpsilon(draft)
+                            setPoints(simplifyPolygon(draft, epsilon))
                         })
                     }
                 } else {
@@ -75,13 +139,15 @@ export default function Home() {
         return () => {
             clearInterval(interval.current)
         };
-    }, [started, points, response]);
+    }, [started, points]);
 
 
     const handleEndBtnClick = () => {
         setStarted(false);
         const draft = [...points];
-        draft.push({latitude: points[0].latitude, longitude: points[0].longitude, altitude: points[0].altitude});
+        draft.push({latitude: points[0].latitude, longitude: points[0].longitude});
+        const epsilon = calculateDynamicEpsilon(draft)
+        setPoints(simplifyPolygon(draft, epsilon))
         clearInterval(interval.current);
     }
 
@@ -129,7 +195,9 @@ export default function Home() {
                             </tbody>
                         </table>
 
-                        {!started && points.length > 0 ? <PolygonSvg polygon={points.map(item => [item.latitude, item.longitude])} /> : <span>Polygon not completed</span>}
+                        {!started && points.length > 0 ?
+                            <PolygonSvg polygon={points.map(item => [item.latitude, item.longitude])}/> :
+                            <span>Polygon not completed</span>}
                     </div>
                 </div>
             </div>
