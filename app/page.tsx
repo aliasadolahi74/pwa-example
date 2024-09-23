@@ -33,7 +33,7 @@ export default function Home() {
         return 0;
     }
 
-    const calculateDynamicEpsilon = (points: IPoints, targetAccuracyMeters: number = 10): number => {
+    const calculateDynamicEpsilon = (points: IPoints, targetAccuracyMeters: number = 2): number => {
         // Find the average latitude of all points
         const avgLatitude = points.reduce((sum, point) => sum + point.latitude, 0) / points.length;
 
@@ -78,7 +78,7 @@ export default function Home() {
 
     const setData = (callback?: () => void) => {
         if (response.accuracy) {
-            if (response.accuracy < 160) {
+            if (response.accuracy < 20) {
                 callback ? callback() : undefined;
             } else {
                 toast("Low Accuracy", {type: "error", theme: "colored"});
