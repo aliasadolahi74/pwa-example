@@ -1,44 +1,70 @@
-import React, {useEffect} from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-const UseGeoLocation = () => {
+interface GeoLocationState {
+    latitude: number;
+    longitude: number;
+    altitude: number | null;
+    accuracy: number | null;
+    timestamp: number;
+}
 
-    const [latitude, setLatitude] = React.useState<number>(0);
-    const [longitude, setLongitude] = React.useState<number>(0);
-    const [altitude, setAltitude] = React.useState<number | null>(0);
-    const [accuracy, setAccuracy] = React.useState<number | null>(0);
+const useGeoLocation = (interval: number = 3000) => {
+    const [state, setState] = useState<GeoLocationState>({
+        latitude: 0,
+        longitude: 0,
+        altitude: null,
+        accuracy: null,
+        timestamp: 0,
+    });
 
-    const watchCurrentLocation = async () => {
-        if (navigator.geolocation) {
-            return await new Promise((resolve) => {
-                navigator.geolocation.watchPosition(
-                    (position) => {
-                        const {accuracy, latitude, longitude, altitude} = position.coords;
-                        setLatitude(latitude);
-                        setLongitude(longitude);
-                        setAltitude(altitude);
-                        setAccuracy(accuracy);
-                        resolve({latitude, longitude, altitude, accuracy});
-                    },
-                    (e) => {
-                        if (e.code === 1) {
-                            alert("You must allow using location manually")
-                        }
-                        console.log(e);
-                    },
-                    {timeout: 500, enableHighAccuracy: true}
-                );
-            });
-        } else {
-            alert("You must access to location")
-        }
-    };
+    const watchId = useRef<number | null>(null);
+    const lastUpdate = useRef<number>(0);
 
     useEffect(() => {
+        const watchCurrentLocation = () => {
+            if ('geolocation' in navigator) {
+                watchId.current = navigator.geolocation.watchPosition(
+                    (position) => {
+                        const now = Date.now();
+                        if (now - lastUpdate.current >= interval) {
+                            const { latitude, longitude, altitude, accuracy } = position.coords;
+                            setState({
+                                latitude,
+                                longitude,
+                                altitude,
+                                accuracy,
+                                timestamp: position.timestamp,
+                            });
+                            lastUpdate.current = now;
+                        }
+                    },
+                    (error) => {
+                        console.error('Geolocation error:', error);
+                        if (error.code === 1) {
+                            alert("You must allow using location manually");
+                        }
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 5000,
+                        maximumAge: 0,
+                    }
+                );
+            } else {
+                alert("Geolocation is not supported by this browser");
+            }
+        };
+
         watchCurrentLocation();
-    }, []);
 
+        return () => {
+            if (watchId.current !== null) {
+                navigator.geolocation.clearWatch(watchId.current);
+            }
+        };
+    }, [interval]);
 
-    return {latitude, longitude, altitude, accuracy};
+    return state;
 };
 
-export default UseGeoLocation;
+export default useGeoLocation;

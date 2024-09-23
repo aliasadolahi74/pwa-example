@@ -11,7 +11,7 @@ let marker: null | L.Marker = null;
 const MapContext = () => {
 
     const map = useMap()
-    const response = useGeoLocation();
+    const response = useGeoLocation(1000);
     map.locate({enableHighAccuracy: true, maxZoom: 23});
 
     useEffect(() => {

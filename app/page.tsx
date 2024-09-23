@@ -13,7 +13,7 @@ type ISinglePoint = { latitude: number; longitude: number }
 type IPoints = ISinglePoint[];
 
 export default function Home() {
-    const response = useGeoLocation();
+    const response = useGeoLocation(1000);
     const [started, setStarted] = useState(false);
     const [points, setPoints] = useState<IPoints>([]);
     const interval = useRef<NodeJS.Timeout>();
@@ -113,7 +113,7 @@ export default function Home() {
                     if (distanceToStartingPoint < 1 && points.length > 2) {
                         toast("Do you want to finish it?", {type: "info", theme: "colored"});
                     }
-                    if (distanceToLastPoint >= 3) {
+                    if (distanceToLastPoint >= 1) {
                         setData(async () => {
                             draft.push(currentPoint);
                             const epsilon = calculateDynamicEpsilon(draft);
@@ -129,7 +129,7 @@ export default function Home() {
                 }
 
             }
-        }, 3000);
+        }, 500);
         return () => {
             if(interval.current) {
                 clearInterval(interval.current)
