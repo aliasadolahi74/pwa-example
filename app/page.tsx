@@ -49,35 +49,37 @@ export default function Home() {
     }
 
 
-    const simplifyPolygon = (points: IPoints, epsilon: number): IPoints => {
-        if (points.length <= 2) {
-            return points;
-        }
-
-        // Find the point with the maximum distance
-        let maxDistance = 0;
-        let index = 0;
-        const firstPoint = points[0];
-        const lastPoint = points[points.length - 1];
-
-        for (let i = 1; i < points.length - 1; i++) {
-            const distance = perpendicularDistance(points[i], firstPoint, lastPoint);
-            if (distance > maxDistance) {
-                maxDistance = distance;
-                index = i;
+    const simplifyPolygon = (points: IPoints, epsilon: number): Promise<IPoints> => {
+        return new Promise((resolve) => {
+            if (points.length <= 2) {
+                return points;
             }
-        }
 
-        // If max distance is greater than epsilon, recursively simplify
-        if (maxDistance > epsilon) {
-            const results1 = simplifyPolygon(points.slice(0, index + 1), epsilon);
-            const results2 = simplifyPolygon(points.slice(index), epsilon);
+            // Find the point with the maximum distance
+            let maxDistance = 0;
+            let index = 0;
+            const firstPoint = points[0];
+            const lastPoint = points[points.length - 1];
 
-            // Concat the two result sets
-            return [...results1.slice(0, -1), ...results2];
-        } else {
-            return [firstPoint, lastPoint];
-        }
+            for (let i = 1; i < points.length - 1; i++) {
+                const distance = perpendicularDistance(points[i], firstPoint, lastPoint);
+                if (distance > maxDistance) {
+                    maxDistance = distance;
+                    index = i;
+                }
+            }
+
+            // If max distance is greater than epsilon, recursively simplify
+            if (maxDistance > epsilon) {
+                simplifyPolygon(points.slice(0, index + 1), epsilon).then(results1 => {
+                    simplifyPolygon(points.slice(index), epsilon).then(results2 => {
+                        resolve([...results1.slice(0, -1), ...results2]);
+                    })
+                })
+            } else {
+                resolve([firstPoint, lastPoint]);
+            }
+        })
     }
 
 
@@ -122,8 +124,10 @@ export default function Home() {
                     if (distanceToLastPoint >= 3) {
                         setData(() => {
                             draft.push(currentPoint);
-                            const epsilon = calculateDynamicEpsilon(draft)
-                            setPoints(simplifyPolygon(draft, epsilon))
+                            const epsilon = calculateDynamicEpsilon(draft);
+                            simplifyPolygon(draft, epsilon).then(result => {
+                                setPoints(result)
+                            })
                         })
                     }
                 } else {
@@ -147,7 +151,9 @@ export default function Home() {
         const draft = [...points];
         draft.push({latitude: points[0].latitude, longitude: points[0].longitude});
         const epsilon = calculateDynamicEpsilon(draft)
-        setPoints(simplifyPolygon(draft, epsilon))
+        simplifyPolygon(draft, epsilon).then(result => {
+            setPoints(result)
+        })
         clearInterval(interval.current);
     }
 
