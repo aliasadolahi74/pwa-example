@@ -49,12 +49,8 @@ export default function Home() {
     }
 
 
-    const simplifyPolygon = (points: IPoints, epsilon: number): Promise<IPoints> => {
-        return new Promise((resolve) => {
-            if (points.length <= 2) {
-                return points;
-            }
-
+    const simplifyPolygon = async (points: IPoints, epsilon: number): Promise<IPoints> => {
+        return new Promise(async (resolve) => {
             // Find the point with the maximum distance
             let maxDistance = 0;
             let index = 0;
@@ -68,14 +64,10 @@ export default function Home() {
                     index = i;
                 }
             }
-
-            // If max distance is greater than epsilon, recursively simplify
             if (maxDistance > epsilon) {
-                simplifyPolygon(points.slice(0, index + 1), epsilon).then(results1 => {
-                    simplifyPolygon(points.slice(index), epsilon).then(results2 => {
-                        resolve([...results1.slice(0, -1), ...results2]);
-                    })
-                })
+                const results1 = await simplifyPolygon(points.slice(0, index + 1), epsilon);
+                const results2 = await simplifyPolygon(points.slice(index), epsilon);
+                resolve([...results1.slice(0, -1), ...results2]);
             } else {
                 resolve([firstPoint, lastPoint]);
             }
@@ -85,7 +77,7 @@ export default function Home() {
 
     const setData = (callback?: () => void) => {
         if (response.accuracy) {
-            if (response.accuracy < 20) {
+            if (response.accuracy < 160) {
                 callback ? callback() : undefined;
             } else {
                 toast("Low Accuracy", {type: "error", theme: "colored"});
@@ -122,12 +114,11 @@ export default function Home() {
                         toast("Do you want to finish it?", {type: "info", theme: "colored"});
                     }
                     if (distanceToLastPoint >= 3) {
-                        setData(() => {
+                        setData(async () => {
                             draft.push(currentPoint);
                             const epsilon = calculateDynamicEpsilon(draft);
-                            simplifyPolygon(draft, epsilon).then(result => {
-                                setPoints(result)
-                            })
+                            const result = await simplifyPolygon(draft, epsilon);
+                            setPoints(result)
                         })
                     }
                 } else {
@@ -138,22 +129,22 @@ export default function Home() {
                 }
 
             }
-        }, 1000);
-
+        }, 3000);
         return () => {
-            clearInterval(interval.current)
+            if(interval.current) {
+                clearInterval(interval.current)
+            }
         };
-    }, [started, points]);
+    }, [started, points, response]);
 
 
-    const handleEndBtnClick = () => {
+    const handleEndBtnClick = async () => {
         setStarted(false);
         const draft = [...points];
         draft.push({latitude: points[0].latitude, longitude: points[0].longitude});
         const epsilon = calculateDynamicEpsilon(draft)
-        simplifyPolygon(draft, epsilon).then(result => {
-            setPoints(result)
-        })
+        const result = await simplifyPolygon(draft, epsilon);
+        setPoints(result)
         clearInterval(interval.current);
     }
 
