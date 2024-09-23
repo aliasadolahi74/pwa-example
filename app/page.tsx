@@ -8,6 +8,7 @@ const Map = dynamic(() => import("@/src/core/Map"), {ssr: false});
 import measureDistance from "@/src/core/Map/utils/measureDistance";
 import {toast} from "react-toastify";
 import PolygonSvg from "@/src/features/PolygonSvg";
+import {coordinates} from "@/src/core/Map/utils/mock";
 
 type ISinglePoint = { latitude: number; longitude: number }
 type IPoints = ISinglePoint[];
@@ -117,8 +118,8 @@ export default function Home() {
                         setData(async () => {
                             draft.push(currentPoint);
                             const epsilon = calculateDynamicEpsilon(draft);
-                            // const result = await simplifyPolygon(draft, epsilon);
-                            setPoints(draft)
+                            const result = await simplifyPolygon(draft, epsilon);
+                            setPoints(result)
                         })
                     }
                 } else {
@@ -141,10 +142,10 @@ export default function Home() {
     const handleEndBtnClick = async () => {
         setStarted(false);
         const draft = [...points];
-        draft.push({latitude: points[0].latitude, longitude: points[0].longitude});
-        // const epsilon = calculateDynamicEpsilon(draft)
-        // const result = await simplifyPolygon(draft, epsilon);
-        setPoints(draft)
+        const epsilon = calculateDynamicEpsilon(draft)
+        const result = await simplifyPolygon(draft, epsilon);
+        result.push({latitude: points[0].latitude, longitude: points[0].longitude});
+        setPoints(result)
         clearInterval(interval.current);
     }
 
