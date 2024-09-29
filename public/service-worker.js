@@ -1,27 +1,34 @@
 const CACHE_VERSION = 1;
-const CACHE_NAME = 'offline-cache-v' + CACHE_VERSION;
+const CACHE_NAME = `offline-cache-v${CACHE_VERSION}`;
 const CACHE_DURATION = 7 * 24 * 60 * 60; // 7 days in seconds
 
 const URLS_TO_CACHE = [
-    '/',
     '/offline',
     '/offline2',
+    '/_next/static/css/app/layout.css',
     // Add other URLs you want to cache
 ];
 
 
-const ROUTES_TO_UPDATE = ['/update'];
+const ROUTES_TO_UPDATE = [
+    '/update',
+];
 
 self.addEventListener('install', (event) => {
+    console.log("install********")
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then(cache => {
+                console.log("cache open", cache);
+                const urlsToPrefetch = [...URLS_TO_CACHE, ...ROUTES_TO_UPDATE];
                 return Promise.all(
-                    URLS_TO_CACHE.map(url => {
+                    urlsToPrefetch.map(url => {
                         return fetch(url).then(response => {
+                            console.log("response", response)
                             if (!response.ok) {
-                                throw new Error('Failed to fetch ' + url);
+                                throw new Error(`Failed to fetch ${  url}`);
                             }
+                            console.log("^*^*^*^*^*^", response.body);
                             return cache.put(url, new Response(response.body, {
                                 headers: {
                                     ...response.headers,
@@ -102,9 +109,9 @@ self.addEventListener('fetch', (event) => {
                     return networkResponse;
                 }).catch(() => {
                     // If both cache and network fail, return a basic error response
-                    return new Response('Network error occurred', {
+                    return new Response('مشکلی در اتصال شما به اینترنت به وجود آمده است', {
                         status: 408,
-                        headers: { 'Content-Type': 'text/plain' }
+                        headers: { 'Content-Type': 'text/plain; charset=UTF-8' }
                     });
                 });
             })
@@ -113,14 +120,14 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Add a message event listener to handle cache updates
-self.addEventListener('message', (event) => {
-    if (event.data && event.data.type === 'UPDATE_ROUTES_CACHE') {
+self.addEventListener('push', (event) => {
+    if (event.data && event.data.text() === 'UPDATE_ROUTES_CACHE') {
         event.waitUntil(
             Promise.all(ROUTES_TO_UPDATE.map(route =>
                 fetch(route)
                     .then(response => {
                         if (!response.ok) {
-                            throw new Error('Failed to fetch ' + route);
+                            throw new Error(`Failed to fetch ${route}`);
                         }
                         return caches.open(CACHE_NAME).then(cache => {
                             return cache.put(route, new Response(response.body, {
@@ -133,10 +140,10 @@ self.addEventListener('message', (event) => {
                         });
                     })
                     .then(() => {
-                        console.log('Cache updated for ' + route);
+                        console.log(`Cache updated for ${route}`);
                     })
                     .catch(error => {
-                        console.error('Failed to update cache for ' + route + ':', error);
+                        console.error(`Failed to update cache for ${route}:`, error);
                     })
             ))
         );
