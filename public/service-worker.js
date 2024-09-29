@@ -5,7 +5,6 @@ const CACHE_DURATION = 7 * 24 * 60 * 60; // 7 days in seconds
 const URLS_TO_CACHE = [
     '/offline',
     '/offline2',
-    '/_next/static/css/app/layout.css',
     // Add other URLs you want to cache
 ];
 
